@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block page_title %}New Lab Order{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white fw-semibold"><i class="fas fa-flask me-2 text-warning"></i>Lab Order Entry</div>
+  <div class="card-body">
+    <form method="post" id="orderForm">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Step 1 — Select Patient</label>
+        <select name="patient_id" id="patientSelect" class="form-select" required onchange="showPatientCard(this)">
+          <option value="">-- Search and select patient --</option>
+          {% for p in patients %}
+          <option value="{{ p.pk }}" data-mrn="{{ p.mrn }}" data-age="{{ p.age }}" data-gender="{{ p.gender }}" {% if request.GET.patient == p.pk|stringformat:'s' %}selected{% endif %}>
+            {{ p.mrn }} — {{ p.patient_name }}
+          </option>
+          {% endfor %}
+        </select>
+        <div id="patientCard" class="alert alert-info mt-2 d-none">
+          <strong>MRN:</strong> <span id="cMRN"></span> &nbsp; <strong>Age:</strong> <span id="cAge"></span> &nbsp; <strong>Gender:</strong> <span id="cGender"></span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Step 2 — Add Tests</label>
+        <select id="assayPicker" class="form-select mb-2" onchange="addAssay(this)">
+          <option value="">-- Search and select a test --</option>
+          {% for menu in menus %}
+          <optgroup label="{{ menu.menu_name }}">
+            {% for assay in menu.assays.all %}
+            {% if assay.status == 'Active' %}
+            <option value="{{ assay.pk }}" data-code="{{ assay.assay_code }}" data-name="{{ assay.assay_name }}" data-sample="{{ assay.sample_type }}">
+              {{ assay.assay_code }} — {{ assay.assay_name }}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+
+        <table class="table table-bordered" id="orderGrid">
+          <thead class="table-light">
+            <tr><th>#</th><th>Code</th><th>Test Name</th><th>Sample Type</th><th>Remove</th></tr>
+          </thead>
+          <tbody id="orderBody">
+            <tr id="emptyRow"><td colspan="5" class="text-center text-muted">No tests added yet.</td></tr>
+          </tbody>
+        </table>
+        <div id="hiddenAssays"></div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Clinical Notes</label>
+        <textarea name="notes" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" onclick="confirmOrder()"><i class="fas fa-save me-1"></i>Save Order</button>
+        <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Confirm Order</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">Are you sure you want to place this order? This action cannot be undone.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('orderForm').submit()">Confirm & Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const addedAssays = new Set();
+
+function showPatientCard(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const card = document.getElementById('patientCard');
+  if (opt.value) {
+    document.getElementById('cMRN').textContent = opt.dataset.mrn;
+    document.getElementById('cAge').textContent = opt.dataset.age;
+    document.getElementById('cGender').textContent = opt.dataset.gender;
+    card.classList.remove('d-none');
+  } else { card.classList.add('d-none'); }
+}
+
+function addAssay(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value || addedAssays.has(opt.value)) { sel.value = ''; return; }
+  addedAssays.add(opt.value);
+  document.getElementById('emptyRow').style.display = 'none';
+  const row = document.getElementById('orderBody');
+  const idx = addedAssays.size;
+  row.insertAdjacentHTML('beforeend', `
+    <tr id="row_${opt.value}">
+      <td>${idx}</td>
+      <td><code>${opt.dataset.code}</code></td>
+      <td>${opt.dataset.name}</td>
+      <td>${opt.dataset.sample}</td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssay('${opt.value}')"><i class="fas fa-times"></i></button></td>
+    </tr>
+  `);
+  document.getElementById('hiddenAssays').insertAdjacentHTML('beforeend',
+    `<input type="hidden" name="assay_ids" value="${opt.value}" id="hidden_${opt.value}">`
+  );
+  sel.value = '';
+}
+
+function removeAssay(id) {
+  addedAssays.delete(id);
+  document.getElementById('row_' + id)?.remove();
+  document.getElementById('hidden_' + id)?.remove();
+  if (addedAssays.size === 0) document.getElementById('emptyRow').style.display = '';
+}
+
+function confirmOrder() {
+  if (!document.getElementById('patientSelect').value) { alert('Please select a patient.'); return; }
+  if (addedAssays.size === 0) { alert('Please add at least one test.'); return; }
+  new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+window.onload = () => {
+  const sel = document.getElementById('patientSelect');
+  if (sel.value) showPatientCard(sel);
+};
+</script>
+{% endblock %}

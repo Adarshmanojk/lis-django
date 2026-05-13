@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Login — LIS{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <div class="card shadow border-0 mt-5">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-flask fa-3x text-primary"></i>
+          <h4 class="mt-2 fw-bold">LIS Portal</h4>
+          <p class="text-muted small">Laboratory Information System</p>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" name="username" class="form-control" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">Sign In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

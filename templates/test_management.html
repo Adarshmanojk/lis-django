@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block page_title %}Test Catalogue{% endblock %}
+{% block content %}
+<div class="accordion" id="menuAccordion">
+  {% for menu in menus %}
+  <div class="accordion-item border-0 shadow-sm mb-2">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#menu{{ menu.pk }}">
+        <span class="badge bg-primary me-2">{{ menu.menu_code }}</span>{{ menu.menu_name }}
+        <span class="badge bg-secondary ms-2">{{ menu.assays.count }} tests</span>
+      </button>
+    </h2>
+    <div id="menu{{ menu.pk }}" class="accordion-collapse collapse" data-bs-parent="#menuAccordion">
+      <div class="accordion-body">
+        <table class="table table-sm table-bordered">
+          <thead class="table-light"><tr><th>Code</th><th>Name</th><th>Sample</th><th>Unit</th><th>Normal Range</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for assay in menu.assays.all %}
+            <tr>
+              <td><code>{{ assay.assay_code }}</code></td>
+              <td>{{ assay.assay_name }}</td>
+              <td>{{ assay.sample_type }}</td>
+              <td>{{ assay.unit|default:"—" }}</td>
+              <td>{{ assay.normal_range|default:"—" }}</td>
+              <td>{{ assay.price|default:"—" }}</td>
+              <td><span class="badge {% if assay.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ assay.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

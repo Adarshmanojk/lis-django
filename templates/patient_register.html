@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block page_title %}{% if edit %}Edit Patient{% else %}Register Patient{% endif %}{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white fw-semibold">
+    <i class="fas fa-user-plus me-2 text-primary"></i>{% if edit %}Edit Patient{% else %}Patient Registration{% endif %}
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">MRN <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="text" name="mrn" class="form-control" value="{{ patient.mrn|default:auto_mrn }}" {% if edit %}readonly{% endif %} required>
+            {% if not edit %}<button type="button" class="btn btn-outline-secondary" onclick="generateMRN()"><i class="fas fa-sync-alt"></i></button>{% endif %}
+          </div>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Patient Name <span class="text-danger">*</span></label>
+          <input type="text" name="patient_name" class="form-control" maxlength="150" value="{{ patient.patient_name|default:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Age <span class="text-danger">*</span></label>
+          <input type="number" name="age" class="form-control" min="0" max="150" value="{{ patient.age|default:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Gender <span class="text-danger">*</span></label>
+          <select name="gender" class="form-select" required>
+            <option value="">-- Select --</option>
+            <option value="Male" {% if patient.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if patient.gender == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="dob" class="form-control" value="{{ patient.dob|date:'Y-m-d'|default:'' }}" onchange="calcAge(this.value)">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status <span class="text-danger">*</span></label>
+          <select name="status" class="form-select">
+            <option value="Active" {% if patient.status != 'Inactive' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if patient.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Nationality <span class="text-danger">*</span></label>
+          <input type="text" name="nationality" class="form-control" value="{{ patient.nationality|default:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" class="form-control" value="{{ patient.phone|default:'' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ patient.email|default:'' }}">
+        </div>
+      </div>
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Patient</button>
+        <a href="{% url 'patient_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function generateMRN() {
+  fetch('{% url "generate_mrn_ajax" %}', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(d => { document.querySelector('[name=mrn]').value = d.mrn; })
+    .catch(() => alert('Could not generate MRN.'));
+}
+function calcAge(dob) {
+  if (!dob) return;
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  document.querySelector('[name=age]').value = age;
+}
+</script>
+{% endblock %}

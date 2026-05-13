@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block page_title %}Lab Report — {{ order.order_no }}{% endblock %}
+{% block content %}
+<div class="no-print mb-3">
+  <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="fas fa-print me-1"></i>Print Report</button>
+  <a href="{% url 'order_list' %}" class="btn btn-outline-secondary ms-2">Back</a>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+  <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
+    <div>
+      <h4 class="fw-bold text-primary"><i class="fas fa-flask me-2"></i>Laboratory Report</h4>
+      <p class="mb-0 text-muted small">LIS — Laboratory Information System</p>
+    </div>
+    <div class="text-end">
+      <div class="fw-semibold">{{ order.order_no }}</div>
+      <div class="small text-muted">Ordered: {{ order.ordered_at|date:"d M Y H:i" }}</div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <table class="table table-sm table-borderless">
+        <tr><th class="text-muted" width="120">Patient Name</th><td>{{ order.patient.patient_name }}</td></tr>
+        <tr><th class="text-muted">MRN</th><td><code>{{ order.patient.mrn }}</code></td></tr>
+        <tr><th class="text-muted">Age / Gender</th><td>{{ order.patient.age }} yrs / {{ order.patient.gender }}</td></tr>
+        <tr><th class="text-muted">Nationality</th><td>{{ order.patient.nationality }}</td></tr>
+      </table>
+    </div>
+    <div class="col-md-6">
+      <table class="table table-sm table-borderless">
+        <tr><th class="text-muted" width="140">Ordered By</th><td>{{ order.ordered_by.full_name }}</td></tr>
+        <tr><th class="text-muted">Collected By</th><td>{{ order.collected_by.full_name|default:"—" }}</td></tr>
+        <tr><th class="text-muted">Collected At</th><td>{{ order.collected_at|date:"d M Y H:i"|default:"—" }}</td></tr>
+        <tr><th class="text-muted">Received By</th><td>{{ order.received_by.full_name|default:"—" }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h6 class="fw-semibold mb-2">Test Results</h6>
+  <table class="table table-bordered">
+    <thead class="table-light">
+      <tr><th>Test Code</th><th>Test Name</th><th>Result</th><th>Unit</th><th>Reference Range</th><th>Flag</th><th>Remarks</th></tr>
+    </thead>
+    <tbody>
+      {% for r in order.results.all %}
+      <tr class="{% if r.flag == 'H' or r.flag == 'L' %}table-warning{% elif r.flag == 'CR' %}table-danger{% endif %}">
+        <td><code>{{ r.assay.assay_code }}</code></td>
+        <td>{{ r.assay.assay_name }}</td>
+        <td class="fw-semibold">{{ r.result_value }}</td>
+        <td>{{ r.unit|default:"—" }}</td>
+        <td>{{ r.normal_range|default:"—" }}</td>
+        <td>
+          {% if r.flag %}<span class="badge {% if r.flag == 'CR' %}bg-danger{% elif r.flag == 'H' or r.flag == 'L' %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ r.flag }}</span>{% else %}—{% endif %}
+        </td>
+        <td>{{ r.remarks|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="border-top pt-3 mt-3 text-muted small">
+    <em>This report is system-generated. Please correlate with clinical findings.</em>
+  </div>
+</div>
+{% endblock %}

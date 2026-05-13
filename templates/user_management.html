@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block page_title %}User Management{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-semibold">System Users</div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Employee ID</th><th>Name</th><th>Role</th><th>Department</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><code>{{ u.employee_id }}</code></td>
+          <td>{{ u.full_name }}</td>
+          <td><span class="badge bg-primary">{{ u.role }}</span></td>
+          <td>{{ u.department|default:"—" }}</td>
+          <td><span class="badge {% if u.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ u.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if access_rules %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white fw-semibold">Access rules ({{ access_rules|length }})</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr><th>Role</th><th>Module</th><th>View</th><th>Create</th><th>Edit</th><th>Delete</th></tr></thead>
+      <tbody>
+        {% for a in access_rules %}
+        <tr>
+          <td>{{ a.role_name }}</td>
+          <td>{{ a.module_name }}</td>
+          <td>{{ a.can_view }}</td>
+          <td>{{ a.can_create }}</td>
+          <td>{{ a.can_edit }}</td>
+          <td>{{ a.can_delete }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

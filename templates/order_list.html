@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block page_title %}Orders{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Order No</th><th>Patient</th><th>Tests</th><th>Ordered At</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td><strong>{{ order.order_no }}</strong></td>
+          <td>{{ order.patient.patient_name }} <br><code class="small">{{ order.patient.mrn }}</code></td>
+          <td>{{ order.lines.count }}</td>
+          <td>{{ order.ordered_at|date:"d M Y H:i" }}</td>
+          <td><span class="badge status-badge-{{ order.order_status }}">{{ order.get_order_status_display }}</span></td>
+          <td>
+            {% if order.order_status == 4 %}
+            <a href="{% url 'lab_report' order.pk %}" class="btn btn-sm btn-success"><i class="fas fa-file-medical me-1"></i>View Report</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No orders found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

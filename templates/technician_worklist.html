@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block page_title %}Lab Technician Worklist{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <form class="d-flex gap-2" method="get">
+    <select name="status" class="form-select w-auto" onchange="this.form.submit()">
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+      <option value="2" {% if status_filter == '2' %}selected{% endif %}>Collected</option>
+      <option value="3" {% if status_filter == '3' %}selected{% endif %}>In-Lab</option>
+      <option value="4" {% if status_filter == '4' %}selected{% endif %}>Completed</option>
+    </select>
+  </form>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" id="worklist">
+      <thead class="table-light">
+        <tr><th>Order No</th><th>Patient</th><th>Tests</th><th>Collected At</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td><strong>{{ order.order_no }}</strong></td>
+          <td>{{ order.patient.patient_name }} <br><code class="small">{{ order.patient.mrn }}</code></td>
+          <td>{{ order.lines.count }}</td>
+          <td>{{ order.collected_at|date:"d M Y H:i"|default:"—" }}</td>
+          <td><span class="badge status-badge-{{ order.order_status }}">{{ order.get_order_status_display }}</span></td>
+          <td class="d-flex gap-1 flex-wrap">
+            {% if order.order_status == 2 %}
+            <form method="post" onsubmit="return confirm('Mark order {{ order.order_no }} as In-Lab?')">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.pk }}">
+              <input type="hidden" name="action" value="mark_inlab">
+              <button class="btn btn-sm btn-primary"><i class="fas fa-microscope me-1"></i>Mark In-Lab</button>
+            </form>
+            {% endif %}
+            {% if order.order_status == 3 %}
+            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="collapse" data-bs-target="#results_{{ order.pk }}">
+              <i class="fas fa-edit me-1"></i>Enter Results
+            </button>
+            {% endif %}
+            {% if order.order_status == 4 %}
+            <span class="badge bg-success">Completed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% if order.order_status == 3 %}
+        <tr class="collapse" id="results_{{ order.pk }}">
+          <td colspan="6" class="bg-light p-3">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.pk }}">
+              <input type="hidden" name="action" value="save_results">
+              <table class="table table-sm table-bordered">
+                <thead><tr><th>Test</th><th>Result Value</th><th>Unit</th><th>Normal Range</th><th>Flag</th><th>Remarks</th></tr></thead>
+                <tbody>
+                  {% for line in order.lines.all %}
+                  <tr>
+                    <td>{{ line.assay.assay_code }} — {{ line.assay.assay_name }}</td>
+                    <td><input name="result_{{ line.assay.id }}" class="form-control form-control-sm" required></td>
+                    <td><input name="unit_{{ line.assay.id }}" class="form-control form-control-sm" value="{{ line.assay.unit|default:'' }}"></td>
+                    <td><input name="normal_{{ line.assay.id }}" class="form-control form-control-sm" value="{{ line.assay.normal_range|default:'' }}"></td>
+                    <td>
+                      <select name="flag_{{ line.assay.id }}" class="form-select form-select-sm">
+                        <option value="">—</option>
+                        <option value="N">Normal</option>
+                        <option value="H">High</option>
+                        <option value="L">Low</option>
+                        <option value="CR">Critical</option>
+                      </select>
+                    </td>
+                    <td><input name="remarks_{{ line.assay.id }}" class="form-control form-control-sm"></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-save me-1"></i>Save Results & Complete Order</button>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No orders found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
